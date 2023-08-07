@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Blockmate</string>
+    <string name="action_reset">Reset</string>
+    <string name="first_fragment_label">Blockmate</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="reset_popup_title">Reset Board</string>
+    <string name="reset_popup_message">Are you sure you want to reset the chessboard?</string>
+    <string name="king_in_check_message">Check</string>
+    <string name="king_mate_title">%1$s wins!</string>
+    <string name="king_mate_message">%1$s is checkmated! Reset the board using the \'reset board\' button in the top-right.</string>
+    <string name="king_draw_title">Draw</string>
+    <string name="king_draw_message">Nobody wins. Reset the board using the \'reset board\' button in the top-right.</string>
+    <string name="confirm">Confirm</string>
+    <string name="pawn_promotion_title">Pawn Promotion</string>
+    <string name="piece_pawn">Pawn</string>
+    <string name="piece_knight">Knight</string>
+    <string name="piece_bishop">Bishop</string>
+    <string name="piece_rook">Rook</string>
+    <string name="piece_queen">Queen</string>
+    <string name="piece_king">King</string>
+</resources>
