@@ -203,6 +203,37 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
 
         _boardTileScanner.updateCapturableTiles(_board)
 
+        // Check for pawn promotion
+        val tile = _board.tiles[x][y]
+
+        if (_pawnLastRowValidator(tile, y))
+        {
+            _pawnPromotionState.value = tile
+        }
+        else
+        {
+            onPieceMoved()
+
+            saveToDatabase()
+        }
+    }
+
+    fun promotePawn(tile: Tile, newPiece: Piece)
+    {
+        if (tile.piece != Piece.Pawn)
+            return
+
+        tile.piece = newPiece
+
+        onPieceMoved()
+
+        updateBoardState()
+
+        saveToDatabase()
+    }
+
+    fun updateKingState()
+    {
         // Is white King mated
         val whiteKingEndState = _boardKingScanner.isKingMated(
             _board,
@@ -260,38 +291,6 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
         // Is black King in check
         else if (_boardKingScanner.isKingInCheck(_board, Player.Black))
             _kingInCheckState.value = Unit
-
-        // Removed blocked state from tile
-        _boardBlockableTileSelector.clear()
-
-        // Swap game state
-        _gameState.value = GameState.Block
-
-        _boardBlockableTileShower(_board, getBlockablePlayer())
-
-        // Skip block state if there is no blockable tile
-        if (!_boardBlockableTileShower.isAnyTileBlockable())
-            swapTurn()
-
-        // Check for pawn promotion
-        val tile = _board.tiles[x][y]
-
-        if (_pawnLastRowValidator(tile, y))
-            _pawnPromotionState.value = tile
-
-        saveToDatabase()
-    }
-
-    fun promotePawn(tile: Tile, newPiece: Piece)
-    {
-        if (tile.piece != Piece.Pawn)
-            return
-
-        tile.piece = newPiece
-
-        updateBoardState()
-
-        saveToDatabase()
     }
 
     fun onBoardTileClicked(x: Int, y: Int)
@@ -353,6 +352,23 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
     private fun updateBoardState()
     {
         _boardState.value = _board
+    }
+
+    private fun onPieceMoved()
+    {
+        updateKingState()
+
+        // Removed blocked state from tile
+        _boardBlockableTileSelector.clear()
+
+        // Swap game state
+        _gameState.value = GameState.Block
+
+        _boardBlockableTileShower(_board, getBlockablePlayer())
+
+        // Skip block state if there is no blockable tile
+        if (!_boardBlockableTileShower.isAnyTileBlockable())
+            swapTurn()
     }
 
     private fun saveToDatabase()
