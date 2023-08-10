@@ -8,6 +8,10 @@ data class Tile(
     val id: Int = 0,
     var piece: Piece = Piece.None,
     var piecePlayer: Player = Player.None,
+    var isCastlePiece: Boolean = false,
+    var isCastleTargetLeft: Boolean = false,
+    var isCastleTargetRight: Boolean = false,
+    var hasCastlePieceMoved: Boolean = false,
     var state: TileState = TileState.None,
     var capturableBy: MutableSet<Player> = mutableSetOf(),
     var image: Int = 0
@@ -17,6 +21,17 @@ data class Tile(
     {
         val capturableByCopy = capturableBy.toMutableSet()
 
-        return Tile(id, piece, piecePlayer, state, capturableByCopy, image)
+        return Tile(
+            id,
+            piece,
+            piecePlayer,
+            isCastlePiece,
+            isCastleTargetLeft,
+            isCastleTargetRight,
+            hasCastlePieceMoved,
+            state,
+            capturableByCopy,
+            image
+        )
     }
 }

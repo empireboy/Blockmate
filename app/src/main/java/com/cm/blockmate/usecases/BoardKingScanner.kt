@@ -11,6 +11,8 @@ import com.cm.blockmate.validators.PawnFirstMoveValidator
 
 class BoardKingScanner
 {
+    val castleRange = 2
+
     private var _kingTiles: MutableList<Tile> = mutableListOf()
 
     fun isKingInCheck(board: Board, checkedPlayer: Player): Boolean
@@ -111,6 +113,39 @@ class BoardKingScanner
         }
 
         return endState
+    }
+
+    fun getKingTile(board: Board, player: Player): Tile?
+    {
+        updateKingTiles(board)
+
+        for (kingTile in _kingTiles)
+        {
+            if (kingTile.piecePlayer != player)
+                continue
+
+            return kingTile
+        }
+
+        return null
+    }
+
+    fun getCastleTile(board: Board, player: Player, left: Boolean): Tile?
+    {
+        val kingTile = getKingTile(board, player) ?: return null
+
+        if (!kingTile.isCastlePiece)
+            return null
+
+        val (kingTileX, kingTileY) = board.getCoordinatesOfTile(kingTile) ?: throw AssertionError()
+
+        val castleTile = when (left)
+        {
+            true -> board.tiles[kingTileX - castleRange][kingTileY]
+            false -> board.tiles[kingTileX + castleRange][kingTileY]
+        }
+
+        return castleTile
     }
 
     private fun updateKingTiles(board: Board)

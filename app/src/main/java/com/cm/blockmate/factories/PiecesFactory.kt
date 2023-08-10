@@ -26,6 +26,9 @@ class PiecesFactory
             .addPiece(Piece.Bishop, Player.White, 5, 7)
             .addPiece(Piece.Knight, Player.White, 6, 7)
             .addPiece(Piece.Rook, Player.White, 7, 7)
+            .setCastlePiece(0, 7)
+            .setCastlePiece(7, 7)
+            .setCastlePiece(4, 7)
 
             .addPiece(Piece.Pawn, Player.Black, 0, 1)
             .addPiece(Piece.Pawn, Player.Black, 1, 1)
@@ -43,5 +46,8 @@ class PiecesFactory
             .addPiece(Piece.Bishop, Player.Black, 5, 0)
             .addPiece(Piece.Knight, Player.Black, 6, 0)
             .addPiece(Piece.Rook, Player.Black, 7, 0)
+            .setCastlePiece(0, 0)
+            .setCastlePiece(7, 0)
+            .setCastlePiece(4, 0)
     }
 }

@@ -5,14 +5,12 @@ import com.cm.blockmate.enums.Player
 import com.cm.blockmate.enums.TileState
 import com.cm.blockmate.models.Board
 import com.cm.blockmate.models.Tile
+import com.cm.blockmate.validators.KingCastleValidator
 import com.cm.blockmate.validators.KingInCheckAfterMoveValidator
 import com.cm.blockmate.validators.PawnFirstMoveValidator
 
 class BoardTileSelector
 {
-    private val _whitePawnFirstRow = 6
-    private val _blackPawnFirstRow = 1
-
     private var _selectedTile: Tile? = null
     private var _movableTiles: MutableList<Tile> = mutableListOf()
 
@@ -24,7 +22,8 @@ class BoardTileSelector
         boardPieceMover: BoardPieceMover,
         boardKingScanner: BoardKingScanner,
         pawnFirstMoveValidator: PawnFirstMoveValidator,
-        kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator
+        kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
+        kingCastleValidator: KingCastleValidator
     )
     {
         val pressedTile = board.tiles[x][y]
@@ -64,7 +63,8 @@ class BoardTileSelector
             boardPieceMover,
             boardKingScanner,
             pawnFirstMoveValidator,
-            kingInCheckAfterMoveValidator
+            kingInCheckAfterMoveValidator,
+            kingCastleValidator
         )
     }
 
@@ -81,6 +81,8 @@ class BoardTileSelector
                 return
 
             movableTile.state = TileState.None
+            movableTile.isCastleTargetLeft = false
+            movableTile.isCastleTargetRight = false
         }
 
         _movableTiles.clear()
@@ -99,10 +101,11 @@ class BoardTileSelector
         boardPieceMover: BoardPieceMover,
         boardKingScanner: BoardKingScanner,
         pawnFirstMoveValidator: PawnFirstMoveValidator,
-        kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator
+        kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
+        kingCastleValidator: KingCastleValidator
     )
     {
-        val selectedTileTemp = _selectedTile
+        val selectedTileTemp = _selectedTile ?: return
 
         if (selectedTileTemp?.piece == Piece.None)
             return
@@ -158,6 +161,124 @@ class BoardTileSelector
             capturableTile.state = TileState.Movable
 
             _movableTiles.add(capturableTile)
+        }
+
+        updateMovableCastleTiles(
+            board,
+            selectedTileTemp,
+            boardTileScanner,
+            boardPieceMover,
+            boardKingScanner,
+            kingInCheckAfterMoveValidator,
+            kingCastleValidator
+        )
+    }
+
+    private fun updateMovableCastleTiles(
+        board: Board,
+        selectedTile: Tile,
+        boardTileScanner: BoardTileScanner,
+        boardPieceMover: BoardPieceMover,
+        boardKingScanner: BoardKingScanner,
+        kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
+        kingCastleValidator: KingCastleValidator
+    )
+    {
+        if (selectedTile.piece != Piece.King)
+            return
+
+        if (selectedTile.piecePlayer == Player.White)
+        {
+            // Validation for white king castling towards the left
+            if (kingCastleValidator(
+                board,
+                selectedTile,
+                true,
+                boardTileScanner,
+                boardPieceMover,
+                boardKingScanner,
+                kingInCheckAfterMoveValidator
+            ))
+            {
+                val movableCastleTile: Tile? = boardKingScanner.getCastleTile(board, Player.White, true)
+
+                if (movableCastleTile != null)
+                {
+                    movableCastleTile.state = TileState.Movable
+                    movableCastleTile.isCastleTargetLeft = true
+
+                    _movableTiles.add(movableCastleTile)
+                }
+            }
+
+            // Validation for white king castling towards the right
+            if (kingCastleValidator(
+                board,
+                selectedTile,
+                false,
+                boardTileScanner,
+                boardPieceMover,
+                boardKingScanner,
+                kingInCheckAfterMoveValidator
+            ))
+            {
+                val movableCastleTile: Tile? = boardKingScanner.getCastleTile(board, Player.White, false)
+
+                if (movableCastleTile != null)
+                {
+                    movableCastleTile.state = TileState.Movable
+                    movableCastleTile.isCastleTargetRight = true
+
+                    _movableTiles.add(movableCastleTile)
+                }
+            }
+        }
+
+        if (selectedTile.piecePlayer == Player.Black)
+        {
+            // Validation for black king castling towards the left
+            if (kingCastleValidator(
+                board,
+                selectedTile,
+                true,
+                boardTileScanner,
+                boardPieceMover,
+                boardKingScanner,
+                kingInCheckAfterMoveValidator
+            ))
+            {
+                val movableCastleTile: Tile? = boardKingScanner.getCastleTile(board, Player.Black, true)
+
+                if (movableCastleTile != null)
+                {
+                    movableCastleTile.state = TileState.Movable
+                    movableCastleTile.isCastleTargetLeft = true
+
+                    _movableTiles.add(movableCastleTile)
+                }
+            }
+
+            // Validation for black king castling towards the right
+            if (kingCastleValidator(
+                board,
+                selectedTile,
+                false,
+                boardTileScanner,
+                boardPieceMover,
+                boardKingScanner,
+                kingInCheckAfterMoveValidator
+            ))
+            {
+                val movableCastleTile: Tile? = boardKingScanner.getCastleTile(board, Player.Black, false)
+
+                if (movableCastleTile != null)
+                {
+                    movableCastleTile.state = TileState.Movable
+                    movableCastleTile.isCastleTargetRight = true
+
+                    _movableTiles.add(movableCastleTile)
+                }
+            }
         }
     }
 }

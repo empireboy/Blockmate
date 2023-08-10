@@ -26,4 +26,11 @@ class ChessBoardBuilder(private val chessBoardViewModel: ChessBoardViewModel)
 
         return this
     }
+
+    fun setCastlePiece(x: Int, y: Int): ChessBoardBuilder
+    {
+        chessBoardViewModel.setCastlePiece(x, y)
+
+        return this
+    }
 }

@@ -6,14 +6,24 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.cm.blockmate.R
-import com.cm.blockmate.enums.*
+import com.cm.blockmate.enums.EndState
+import com.cm.blockmate.enums.GameState
+import com.cm.blockmate.enums.Piece
+import com.cm.blockmate.enums.Player
+import com.cm.blockmate.enums.TileState
 import com.cm.blockmate.factories.PiecesFactory
 import com.cm.blockmate.mappers.BoardMapper
 import com.cm.blockmate.models.Board
-import com.cm.blockmate.models.BoardEntity
 import com.cm.blockmate.models.Tile
 import com.cm.blockmate.repositories.GameRepository
-import com.cm.blockmate.usecases.*
+import com.cm.blockmate.usecases.BoardBlockableTileSelector
+import com.cm.blockmate.usecases.BoardBlockableTileShower
+import com.cm.blockmate.usecases.BoardKingScanner
+import com.cm.blockmate.usecases.BoardPieceAdder
+import com.cm.blockmate.usecases.BoardPieceMover
+import com.cm.blockmate.usecases.BoardTileScanner
+import com.cm.blockmate.usecases.BoardTileSelector
+import com.cm.blockmate.validators.KingCastleValidator
 import com.cm.blockmate.validators.KingInCheckAfterMoveValidator
 import com.cm.blockmate.validators.PawnFirstMoveValidator
 import com.cm.blockmate.validators.PawnLastRowValidator
@@ -55,6 +65,7 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
     private val _pawnFirstMoveValidator = PawnFirstMoveValidator()
     private val _pawnLastRowValidator = PawnLastRowValidator()
     private val _kingInCheckAfterMoveValidator = KingInCheckAfterMoveValidator()
+    private val _kingCastleValidator = KingCastleValidator()
 
     init
     {
@@ -174,7 +185,8 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
             _boardPieceMover,
             _boardKingScanner,
             _pawnFirstMoveValidator,
-            _kingInCheckAfterMoveValidator
+            _kingInCheckAfterMoveValidator,
+            _kingCastleValidator
         )
     }
 
@@ -225,11 +237,23 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
 
         tile.piece = newPiece
 
+        _boardTileScanner.updateCapturableTiles(_board)
+
         onPieceMoved()
 
         updateBoardState()
 
         saveToDatabase()
+    }
+
+    fun setCastlePiece(x: Int, y: Int)
+    {
+        if (_board.tiles[x][y].piece == Piece.None)
+            return
+
+        _board.tiles[x][y].isCastlePiece = true
+
+        Log.d("Test", "Set isCastlePiece true on: $x $y")
     }
 
     fun updateKingState()
@@ -357,6 +381,9 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
     private fun onPieceMoved()
     {
         updateKingState()
+
+        if (_gameState.value == GameState.GameEnded)
+            return
 
         // Removed blocked state from tile
         _boardBlockableTileSelector.clear()

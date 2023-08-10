@@ -1,5 +1,6 @@
 package com.cm.blockmate.models
 
+import android.util.Log
 import com.cm.blockmate.common.Int2
 import com.cm.blockmate.enums.Piece
 
@@ -85,12 +86,14 @@ data class Board(
         {
             for (y in 0 until getHeight())
             {
+                //Log.d("Test", tiles[x][y].id.toString() + " at x and y: $x $y")
                 if (tiles[x][y].id == tile.id)
                 {
                     return Pair(x, y)
                 }
             }
         }
+
         return null
     }
 
