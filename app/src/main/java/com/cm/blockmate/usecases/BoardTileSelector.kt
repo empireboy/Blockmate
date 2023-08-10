@@ -5,6 +5,7 @@ import com.cm.blockmate.enums.Player
 import com.cm.blockmate.enums.TileState
 import com.cm.blockmate.models.Board
 import com.cm.blockmate.models.Tile
+import com.cm.blockmate.validators.EnPassantValidator
 import com.cm.blockmate.validators.KingCastleValidator
 import com.cm.blockmate.validators.KingInCheckAfterMoveValidator
 import com.cm.blockmate.validators.PawnFirstMoveValidator
@@ -23,7 +24,8 @@ class BoardTileSelector
         boardKingScanner: BoardKingScanner,
         pawnFirstMoveValidator: PawnFirstMoveValidator,
         kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
-        kingCastleValidator: KingCastleValidator
+        kingCastleValidator: KingCastleValidator,
+        enPassantValidator: EnPassantValidator
     )
     {
         val pressedTile = board.tiles[x][y]
@@ -64,7 +66,8 @@ class BoardTileSelector
             boardKingScanner,
             pawnFirstMoveValidator,
             kingInCheckAfterMoveValidator,
-            kingCastleValidator
+            kingCastleValidator,
+            enPassantValidator
         )
     }
 
@@ -83,6 +86,7 @@ class BoardTileSelector
             movableTile.state = TileState.None
             movableTile.isCastleTargetLeft = false
             movableTile.isCastleTargetRight = false
+            movableTile.isEnPassantTarget = false
         }
 
         _movableTiles.clear()
@@ -102,12 +106,13 @@ class BoardTileSelector
         boardKingScanner: BoardKingScanner,
         pawnFirstMoveValidator: PawnFirstMoveValidator,
         kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
-        kingCastleValidator: KingCastleValidator
+        kingCastleValidator: KingCastleValidator,
+        enPassantValidator: EnPassantValidator
     )
     {
         val selectedTileTemp = _selectedTile ?: return
 
-        if (selectedTileTemp?.piece == Piece.None)
+        if (selectedTileTemp.piece == Piece.None)
             return
 
         val isPawnFirstMove = pawnFirstMoveValidator(selectedTileTemp, y)
@@ -154,7 +159,7 @@ class BoardTileSelector
 
             if (
                 capturableTile.piece == Piece.None ||
-                capturableTile.piecePlayer == selectedTileTemp?.piecePlayer
+                capturableTile.piecePlayer == selectedTileTemp.piecePlayer
             )
                 continue
 
@@ -171,6 +176,16 @@ class BoardTileSelector
             boardKingScanner,
             kingInCheckAfterMoveValidator,
             kingCastleValidator
+        )
+
+        updateMovableEnPassantTiles(
+            board,
+            selectedTileTemp,
+            boardTileScanner,
+            boardPieceMover,
+            boardKingScanner,
+            kingInCheckAfterMoveValidator,
+            enPassantValidator
         )
     }
 
@@ -280,5 +295,152 @@ class BoardTileSelector
                 }
             }
         }
+    }
+
+    private fun updateMovableEnPassantTiles(
+        board: Board,
+        selectedTile: Tile,
+        boardTileScanner: BoardTileScanner,
+        boardPieceMover: BoardPieceMover,
+        boardKingScanner: BoardKingScanner,
+        kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
+        enPassantValidator: EnPassantValidator
+    )
+    {
+        if (selectedTile.piece != Piece.Pawn)
+            return
+
+        var enPassantTile: Tile?
+
+        if (selectedTile.piecePlayer == Player.White)
+        {
+            enPassantTile = getEnPassantTile(board, selectedTile, true)
+
+            if (enPassantTile != null)
+            {
+                if (enPassantValidator(
+                    board,
+                    selectedTile,
+                    enPassantTile,
+                    boardTileScanner,
+                    boardPieceMover,
+                    boardKingScanner,
+                    kingInCheckAfterMoveValidator
+                ))
+                {
+                    enPassantTile.state = TileState.Movable
+                    enPassantTile.isEnPassantTarget = true
+
+                    _movableTiles.add(enPassantTile)
+                }
+            }
+
+            enPassantTile = getEnPassantTile(board, selectedTile, false)
+
+            if (enPassantTile != null)
+            {
+                if (enPassantValidator(
+                    board,
+                    selectedTile,
+                    enPassantTile,
+                    boardTileScanner,
+                    boardPieceMover,
+                    boardKingScanner,
+                    kingInCheckAfterMoveValidator
+                ))
+                {
+                    enPassantTile.state = TileState.Movable
+                    enPassantTile.isEnPassantTarget = true
+
+                    _movableTiles.add(enPassantTile)
+                }
+            }
+        }
+        else
+        {
+            enPassantTile = getEnPassantTile(board, selectedTile, true)
+
+            if (enPassantTile != null)
+            {
+                if (enPassantValidator(
+                        board,
+                        selectedTile,
+                        enPassantTile,
+                        boardTileScanner,
+                        boardPieceMover,
+                        boardKingScanner,
+                        kingInCheckAfterMoveValidator
+                    ))
+                {
+                    enPassantTile.state = TileState.Movable
+                    enPassantTile.isEnPassantTarget = true
+
+                    _movableTiles.add(enPassantTile)
+                }
+            }
+
+            enPassantTile = getEnPassantTile(board, selectedTile, false)
+
+            if (enPassantTile != null)
+            {
+                if (enPassantValidator(
+                        board,
+                        selectedTile,
+                        enPassantTile,
+                        boardTileScanner,
+                        boardPieceMover,
+                        boardKingScanner,
+                        kingInCheckAfterMoveValidator
+                    ))
+                {
+                    enPassantTile.state = TileState.Movable
+                    enPassantTile.isEnPassantTarget = true
+
+                    _movableTiles.add(enPassantTile)
+                }
+            }
+        }
+    }
+
+    private fun getEnPassantTile(board: Board, pawnTile: Tile, left: Boolean): Tile?
+    {
+        val (pawnTileX, pawnTileY) = board.getCoordinatesOfTile(pawnTile) ?: throw AssertionError()
+
+        var enPassantTileX: Int
+        var enPassantTileY: Int
+
+        val player = pawnTile.piecePlayer
+
+        if (left)
+        {
+            if (player == Player.White)
+            {
+                enPassantTileX = pawnTileX - 1
+                enPassantTileY = pawnTileY - 1
+            }
+            else
+            {
+                enPassantTileX = pawnTileX - 1
+                enPassantTileY = pawnTileY + 1
+            }
+        }
+        else
+        {
+            if (player == Player.White)
+            {
+                enPassantTileX = pawnTileX + 1
+                enPassantTileY = pawnTileY - 1
+            }
+            else
+            {
+                enPassantTileX = pawnTileX + 1
+                enPassantTileY = pawnTileY + 1
+            }
+        }
+
+        if (!board.isInRange(enPassantTileX, enPassantTileY))
+            return null
+
+        return board.tiles[enPassantTileX][enPassantTileY]
     }
 }

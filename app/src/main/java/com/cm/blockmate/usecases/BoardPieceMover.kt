@@ -1,9 +1,11 @@
 package com.cm.blockmate.usecases
 
+import android.util.Log
 import com.cm.blockmate.enums.Piece
 import com.cm.blockmate.enums.Player
 import com.cm.blockmate.models.Board
 import com.cm.blockmate.models.Tile
+import kotlin.math.abs
 
 class BoardPieceMover
 {
@@ -27,6 +29,32 @@ class BoardPieceMover
             castleRook(board, tile, true)
         else if (tile.isCastleTargetRight)
             castleRook(board, tile, false)
+
+        if (tile.piece == Piece.Pawn)
+        {
+            val (selectedTileX, selectedTileY) = board.getCoordinatesOfTile(selectedTile) ?: throw AssertionError()
+
+            // Pawn moved 2 tiles
+            if (abs(selectedTileY - y) == 2)
+                tile.hasPawnMovedTwice = true
+
+            if (tile.isEnPassantTarget)
+            {
+                val opponentPawnTile: Tile = if (tile.piecePlayer == Player.White)
+                {
+                    board.tiles[x][y + 1]
+                }
+                else
+                {
+                    board.tiles[x][y - 1]
+                }
+
+                opponentPawnTile.piece = Piece.None
+                opponentPawnTile.piecePlayer = Player.None
+
+                tile.isEnPassantTarget = false
+            }
+        }
 
         boardTileSelector.clear()
     }

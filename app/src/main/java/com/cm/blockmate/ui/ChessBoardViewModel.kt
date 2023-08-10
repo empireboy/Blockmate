@@ -2,7 +2,6 @@ package com.cm.blockmate.ui
 
 import android.app.Application
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.cm.blockmate.R
@@ -23,6 +22,7 @@ import com.cm.blockmate.usecases.BoardPieceAdder
 import com.cm.blockmate.usecases.BoardPieceMover
 import com.cm.blockmate.usecases.BoardTileScanner
 import com.cm.blockmate.usecases.BoardTileSelector
+import com.cm.blockmate.validators.EnPassantValidator
 import com.cm.blockmate.validators.KingCastleValidator
 import com.cm.blockmate.validators.KingInCheckAfterMoveValidator
 import com.cm.blockmate.validators.PawnFirstMoveValidator
@@ -66,6 +66,7 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
     private val _pawnLastRowValidator = PawnLastRowValidator()
     private val _kingInCheckAfterMoveValidator = KingInCheckAfterMoveValidator()
     private val _kingCastleValidator = KingCastleValidator()
+    private val _enPassantValidator = EnPassantValidator()
 
     init
     {
@@ -162,6 +163,8 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
             else -> Player.None
         }
 
+        clearDoublePawnMove(_turnState.value)
+
         _gameState.value = GameState.Move
     }
 
@@ -186,7 +189,8 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
             _boardKingScanner,
             _pawnFirstMoveValidator,
             _kingInCheckAfterMoveValidator,
-            _kingCastleValidator
+            _kingCastleValidator,
+            _enPassantValidator
         )
     }
 
@@ -252,8 +256,6 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
             return
 
         _board.tiles[x][y].isCastlePiece = true
-
-        Log.d("Test", "Set isCastlePiece true on: $x $y")
     }
 
     fun updateKingState()
@@ -371,6 +373,25 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
         _piecesFactory(this)
 
         updateBoardState()
+    }
+
+    private fun clearDoublePawnMove(player: Player?)
+    {
+        if (player == null)
+            return
+
+        for (x in 0 until getBoardWidth())
+        {
+            for (y in 0 until getBoardHeight())
+            {
+                val tile = _board.tiles[x][y]
+
+                if (tile.piecePlayer != player)
+                    continue
+
+                tile.hasPawnMovedTwice = false
+            }
+        }
     }
 
     private fun updateBoardState()

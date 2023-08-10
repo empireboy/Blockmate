@@ -1,5 +1,7 @@
 package com.cm.blockmate.validators
 
+import com.cm.blockmate.enums.Piece
+import com.cm.blockmate.enums.Player
 import com.cm.blockmate.models.Board
 import com.cm.blockmate.models.Tile
 import com.cm.blockmate.usecases.BoardKingScanner
@@ -15,7 +17,8 @@ class KingInCheckAfterMoveValidator
         movableTile: Tile,
         boardTileScanner: BoardTileScanner,
         boardPieceMover: BoardPieceMover,
-        boardKingScanner: BoardKingScanner
+        boardKingScanner: BoardKingScanner,
+        enPassant: Boolean = false
     ): Boolean
     {
         val tile = board.tiles[x][y]
@@ -24,6 +27,22 @@ class KingInCheckAfterMoveValidator
         val (movableTileX, movableTileY) = board.getCoordinatesOfTile(movableTile) ?: throw AssertionError()
 
         boardPieceMover.moveTowards(boardCopy, x, y, movableTileX, movableTileY)
+
+        if (enPassant)
+        {
+            val opponentPawnTile: Tile = if (tile.piecePlayer == Player.White)
+            {
+                boardCopy.tiles[movableTileX][movableTileY + 1]
+            }
+            else
+            {
+                boardCopy.tiles[movableTileX][movableTileY - 1]
+            }
+
+            opponentPawnTile.piece = Piece.None
+            opponentPawnTile.piecePlayer = Player.None
+        }
+
         boardTileScanner.updateCapturableTiles(boardCopy)
 
         // Check if the king is in check, but only on the copied board

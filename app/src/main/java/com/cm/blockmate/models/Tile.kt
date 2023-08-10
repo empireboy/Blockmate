@@ -12,6 +12,8 @@ data class Tile(
     var isCastleTargetLeft: Boolean = false,
     var isCastleTargetRight: Boolean = false,
     var hasCastlePieceMoved: Boolean = false,
+    var hasPawnMovedTwice: Boolean = false,
+    var isEnPassantTarget: Boolean = false,
     var state: TileState = TileState.None,
     var capturableBy: MutableSet<Player> = mutableSetOf(),
     var image: Int = 0
@@ -29,6 +31,8 @@ data class Tile(
             isCastleTargetLeft,
             isCastleTargetRight,
             hasCastlePieceMoved,
+            hasPawnMovedTwice,
+            isEnPassantTarget,
             state,
             capturableByCopy,
             image
