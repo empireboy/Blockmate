@@ -9,7 +9,7 @@ class PiecesFactory
     operator fun invoke(chessBoardViewModel: ChessBoardViewModel)
     {
         val builder = ChessBoardBuilder(chessBoardViewModel)
-
+        
         builder.addPiece(Piece.Pawn, Player.White, 0, 6)
             .addPiece(Piece.Pawn, Player.White, 1, 6)
             .addPiece(Piece.Pawn, Player.White, 2, 6)

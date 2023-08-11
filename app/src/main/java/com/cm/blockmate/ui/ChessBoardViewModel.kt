@@ -203,6 +203,11 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
 
         _boardBlockableTileSelector(_board, x, y, _boardBlockableTileShower)
 
+        updateKingState()
+
+        if (_gameState.value == GameState.GameEnded)
+            return
+
         swapTurn()
 
         saveToDatabase()
