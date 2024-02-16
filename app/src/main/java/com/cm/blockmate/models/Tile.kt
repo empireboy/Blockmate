@@ -6,6 +6,8 @@ import com.cm.blockmate.enums.TileState
 
 data class Tile(
     val id: Int = 0,
+    var x: Int,
+    var y: Int,
     var piece: Piece = Piece.None,
     var piecePlayer: Player = Player.None,
     var isCastlePiece: Boolean = false,
@@ -25,6 +27,8 @@ data class Tile(
 
         return Tile(
             id,
+            x,
+            y,
             piece,
             piecePlayer,
             isCastlePiece,

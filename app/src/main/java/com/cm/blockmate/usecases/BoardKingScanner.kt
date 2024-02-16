@@ -1,5 +1,6 @@
 package com.cm.blockmate.usecases
 
+import android.util.Log
 import com.cm.blockmate.enums.EndState
 import com.cm.blockmate.enums.Piece
 import com.cm.blockmate.enums.Player
@@ -137,12 +138,10 @@ class BoardKingScanner
         if (!kingTile.isCastlePiece)
             return null
 
-        val (kingTileX, kingTileY) = board.getCoordinatesOfTile(kingTile) ?: throw AssertionError()
-
         val castleTile = when (left)
         {
-            true -> board.tiles[kingTileX - castleRange][kingTileY]
-            false -> board.tiles[kingTileX + castleRange][kingTileY]
+            true -> board.tiles[kingTile.x - castleRange][kingTile.y]
+            false -> board.tiles[kingTile.x + castleRange][kingTile.y]
         }
 
         return castleTile

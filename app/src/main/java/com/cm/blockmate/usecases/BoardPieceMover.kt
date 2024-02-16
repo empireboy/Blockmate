@@ -1,9 +1,9 @@
 package com.cm.blockmate.usecases
 
-import android.util.Log
 import com.cm.blockmate.enums.Piece
 import com.cm.blockmate.enums.Player
 import com.cm.blockmate.models.Board
+import com.cm.blockmate.models.Move
 import com.cm.blockmate.models.Tile
 import kotlin.math.abs
 
@@ -32,10 +32,8 @@ class BoardPieceMover
 
         if (tile.piece == Piece.Pawn)
         {
-            val (selectedTileX, selectedTileY) = board.getCoordinatesOfTile(selectedTile) ?: throw AssertionError()
-
             // Pawn moved 2 tiles
-            if (abs(selectedTileY - y) == 2)
+            if (abs(selectedTile.y - y) == 2)
                 tile.hasPawnMovedTwice = true
 
             if (tile.isEnPassantTarget)
@@ -59,15 +57,25 @@ class BoardPieceMover
         boardTileSelector.clear()
     }
 
-    fun moveTowards(board: Board, fromX: Int, fromY: Int, toX: Int, toY: Int)
+    fun moveTowards(board: Board, fromX: Int, fromY: Int, toX: Int, toY: Int): Move?
     {
+        val move = Move(fromX, fromY, toX, toY)
+
         val tileFrom = board.tiles[fromX][fromY]
         val tileTo = board.tiles[toX][toY]
 
         if (tileFrom.piece == Piece.None)
-            return
+            return null
 
         updateCastlePieceMoved(tileFrom)
+
+        if (tileTo.piece != Piece.None)
+        {
+            move.capturedPiece = tileTo.piece
+            move.capturedPiecePlayer = tileTo.piecePlayer
+            move.capturedPieceX = toX
+            move.capturedPieceY = toY
+        }
 
         tileTo.piece = tileFrom.piece
         tileTo.piecePlayer = tileFrom.piecePlayer
@@ -79,6 +87,41 @@ class BoardPieceMover
             castleRook(board, tileTo, true)
         else if (tileTo.isCastleTargetRight)
             castleRook(board, tileTo, false)
+
+        if (tileTo.piece == Piece.Pawn)
+        {
+            // Pawn moved 2 tiles
+            if (abs(fromY - toY) == 2)
+                tileTo.hasPawnMovedTwice = true
+
+            if (tileTo.isEnPassantTarget)
+            {
+                val opponentPawnTile: Tile = if (tileTo.piecePlayer == Player.White)
+                {
+                    move.capturedPieceX = toX
+                    move.capturedPieceY = toY + 1
+
+                    board.tiles[toX][toY + 1]
+                }
+                else
+                {
+                    move.capturedPieceX = toX
+                    move.capturedPieceY = toY - 1
+
+                    board.tiles[toX][toY - 1]
+                }
+
+                move.capturedPiece = opponentPawnTile.piece
+                move.capturedPiecePlayer = opponentPawnTile.piecePlayer
+
+                opponentPawnTile.piece = Piece.None
+                opponentPawnTile.piecePlayer = Player.None
+
+                tileTo.isEnPassantTarget = false
+            }
+        }
+
+        return move
     }
 
     private fun updateCastlePieceMoved(tile: Tile)
@@ -97,8 +140,6 @@ class BoardPieceMover
 
     private fun castleRook(board: Board, castleKingTile: Tile, left: Boolean)
     {
-        val (castleKingTileX, castleKingTileY) = board.getCoordinatesOfTile(castleKingTile) ?: throw AssertionError()
-
         var rookTileX: Int
         var rookTileY: Int
         var targetRookX: Int
@@ -106,17 +147,17 @@ class BoardPieceMover
 
         if (left)
         {
-            rookTileX = castleKingTileX - 2
-            rookTileY = castleKingTileY
-            targetRookX = castleKingTileX + 1
-            targetRookY = castleKingTileY
+            rookTileX = castleKingTile.x - 2
+            rookTileY = castleKingTile.y
+            targetRookX = castleKingTile.x + 1
+            targetRookY = castleKingTile.y
         }
         else
         {
-            rookTileX = castleKingTileX + 1
-            rookTileY = castleKingTileY
-            targetRookX = castleKingTileX - 1
-            targetRookY = castleKingTileY
+            rookTileX = castleKingTile.x + 1
+            rookTileY = castleKingTile.y
+            targetRookX = castleKingTile.x - 1
+            targetRookY = castleKingTile.y
         }
 
         castleKingTile.isCastleTargetLeft = false

@@ -1,6 +1,5 @@
 package com.cm.blockmate.usecases
 
-import android.util.Log
 import com.cm.blockmate.enums.TileState
 import com.cm.blockmate.models.Board
 import com.cm.blockmate.models.Tile

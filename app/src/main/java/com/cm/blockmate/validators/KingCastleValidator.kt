@@ -20,7 +20,8 @@ class KingCastleValidator
         boardTileScanner: BoardTileScanner,
         boardPieceMover: BoardPieceMover,
         boardKingScanner: BoardKingScanner,
-        kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator
+        kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
+        updateThisBoard: Boolean = false
     ): Boolean
     {
         if (!kingTile.isCastlePiece)
@@ -30,10 +31,9 @@ class KingCastleValidator
             return false
 
         val scanTiles: MutableList<Tile> = mutableListOf()
-        val (kingTileX, kingTileY) = board.getCoordinatesOfTile(kingTile) ?: throw AssertionError()
 
-        val rookTileLeft = board.tiles[kingTileX - (kingRookRangeLeft + 1)][kingTileY]
-        val rookTileRight = board.tiles[kingTileX + (kingRookRangeRight + 1)][kingTileY]
+        val rookTileLeft = board.tiles[kingTile.x - (kingRookRangeLeft + 1)][kingTile.y]
+        val rookTileRight = board.tiles[kingTile.x + (kingRookRangeRight + 1)][kingTile.y]
 
         // Add all tiles in between the king and the rook for evaluation
         if (left)
@@ -45,7 +45,7 @@ class KingCastleValidator
                 return false
 
             for (i in 1..kingRookRangeLeft)
-                scanTiles.add(board.tiles[kingTileX - i][kingTileY])
+                scanTiles.add(board.tiles[kingTile.x - i][kingTile.y])
         }
         else
         {
@@ -56,7 +56,7 @@ class KingCastleValidator
                 return false
 
             for (i in 1..kingRookRangeRight)
-                scanTiles.add(board.tiles[kingTileX + i][kingTileY])
+                scanTiles.add(board.tiles[kingTile.x + i][kingTile.y])
         }
 
         for ((index, scanTile) in scanTiles.withIndex())
@@ -72,12 +72,13 @@ class KingCastleValidator
             // Make sure the king is not in check in any of the tiles in between the king and rook
             if (!kingInCheckAfterMoveValidator(
                 board,
-                kingTileX,
-                kingTileY,
+                kingTile.x,
+                kingTile.y,
                 scanTile,
                 boardTileScanner,
                 boardPieceMover,
-                boardKingScanner
+                boardKingScanner,
+                updateThisBoard
             ))
                 return false
         }

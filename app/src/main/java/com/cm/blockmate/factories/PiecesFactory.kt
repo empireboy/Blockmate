@@ -9,12 +9,12 @@ class PiecesFactory
     operator fun invoke(chessBoardViewModel: ChessBoardViewModel)
     {
         val builder = ChessBoardBuilder(chessBoardViewModel)
-        
+
         builder.addPiece(Piece.Pawn, Player.White, 0, 6)
             .addPiece(Piece.Pawn, Player.White, 1, 6)
             .addPiece(Piece.Pawn, Player.White, 2, 6)
             .addPiece(Piece.Pawn, Player.White, 3, 6)
-            .addPiece(Piece.Pawn, Player.White, 4, 6)
+            .addPiece(Piece.Pawn, Player.White, 4, 4)
             .addPiece(Piece.Pawn, Player.White, 5, 6)
             .addPiece(Piece.Pawn, Player.White, 6, 6)
             .addPiece(Piece.Pawn, Player.White, 7, 6)
@@ -34,7 +34,7 @@ class PiecesFactory
             .addPiece(Piece.Pawn, Player.Black, 1, 1)
             .addPiece(Piece.Pawn, Player.Black, 2, 1)
             .addPiece(Piece.Pawn, Player.Black, 3, 1)
-            .addPiece(Piece.Pawn, Player.Black, 4, 1)
+            .addPiece(Piece.Pawn, Player.Black, 4, 3)
             .addPiece(Piece.Pawn, Player.Black, 5, 1)
             .addPiece(Piece.Pawn, Player.Black, 6, 1)
             .addPiece(Piece.Pawn, Player.Black, 7, 1)
@@ -49,5 +49,22 @@ class PiecesFactory
             .setCastlePiece(0, 0)
             .setCastlePiece(7, 0)
             .setCastlePiece(4, 0)
+
+        /*builder.addPiece(Piece.Pawn, Player.White, 3, 6)
+            .addPiece(Piece.Pawn, Player.White, 4, 6)
+            .addPiece(Piece.Pawn, Player.White, 5, 6)
+            .addPiece(Piece.King, Player.White, 4, 7)
+
+            .addPiece(Piece.Pawn, Player.Black, 3, 1)
+            .addPiece(Piece.Pawn, Player.Black, 4, 1)
+            .addPiece(Piece.Pawn, Player.Black, 7, 1)
+            .addPiece(Piece.King, Player.Black, 4, 0)*/
+
+        /*builder.addPiece(Piece.Pawn, Player.White, 3, 6)
+            .addPiece(Piece.King, Player.White, 3, 7)
+            .addPiece(Piece.Queen, Player.White, 6, 7)
+            .addPiece(Piece.King, Player.Black, 4, 0)
+            .addPiece(Piece.Pawn, Player.Black, 4, 1)
+            .addPiece(Piece.Queen, Player.Black, 2, 0)*/
     }
 }

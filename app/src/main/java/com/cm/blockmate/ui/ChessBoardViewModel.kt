@@ -2,9 +2,12 @@ package com.cm.blockmate.ui
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.cm.blockmate.R
+import com.cm.blockmate.ai.ComputerOpponent
 import com.cm.blockmate.enums.EndState
 import com.cm.blockmate.enums.GameState
 import com.cm.blockmate.enums.Piece
@@ -25,10 +28,12 @@ import com.cm.blockmate.usecases.BoardTileSelector
 import com.cm.blockmate.validators.EnPassantValidator
 import com.cm.blockmate.validators.KingCastleValidator
 import com.cm.blockmate.validators.KingInCheckAfterMoveValidator
+import com.cm.blockmate.validators.PawnEnPassantRowValidator
 import com.cm.blockmate.validators.PawnFirstMoveValidator
 import com.cm.blockmate.validators.PawnLastRowValidator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -64,9 +69,23 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
 
     private val _pawnFirstMoveValidator = PawnFirstMoveValidator()
     private val _pawnLastRowValidator = PawnLastRowValidator()
+    private val _pawnEnPassantRowValidator = PawnEnPassantRowValidator()
     private val _kingInCheckAfterMoveValidator = KingInCheckAfterMoveValidator()
     private val _kingCastleValidator = KingCastleValidator()
     private val _enPassantValidator = EnPassantValidator()
+
+    private val _computerOpponent = ComputerOpponent(
+        this,
+        _boardTileSelector,
+        _boardTileScanner,
+        _boardPieceMover,
+        _boardKingScanner,
+        _pawnFirstMoveValidator,
+        _kingInCheckAfterMoveValidator,
+        _kingCastleValidator,
+        _pawnEnPassantRowValidator,
+        _enPassantValidator
+    )
 
     init
     {
@@ -145,7 +164,7 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
         { x ->
             MutableList(_boardHeight)
             { y ->
-                Tile(x * _boardHeight + y)
+                Tile(x * _boardHeight + y, x, y)
             }
         }
 
@@ -156,16 +175,25 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
 
     fun swapTurn()
     {
-        _turnState.value = when (_turnState.value)
+        viewModelScope.launch(Dispatchers.Main)
         {
-            Player.White -> Player.Black
-            Player.Black -> Player.White
-            else -> Player.None
+            _turnState.value = when (_turnState.value) {
+                Player.White -> Player.Black
+                Player.Black -> Player.White
+                else -> Player.None
+            }
+
+            clearDoublePawnMove(_board, _turnState.value)
+
+            _gameState.value = GameState.Move
+
+            delay(1)
+
+            if (_turnState.value == Player.Black)
+            {
+                _computerOpponent.updateBoardState(_board, Player.Black)
+            }
         }
-
-        clearDoublePawnMove(_turnState.value)
-
-        _gameState.value = GameState.Move
     }
 
     fun selectBoardTile(x: Int, y: Int)
@@ -190,6 +218,7 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
             _pawnFirstMoveValidator,
             _kingInCheckAfterMoveValidator,
             _kingCastleValidator,
+            _pawnEnPassantRowValidator,
             _enPassantValidator
         )
     }
@@ -237,6 +266,29 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
 
             saveToDatabase()
         }
+    }
+
+    fun moveComputerOpponentPieceTowards(xFrom: Int, yFrom: Int, xTo: Int, yTo: Int)
+    {
+        _boardPieceMover.moveTowards(_board, xFrom, yFrom, xTo, yTo)
+
+        _boardTileScanner.updateCapturableTiles(_board)
+
+        // Check for pawn promotion
+        val tile = _board.tiles[xTo][yTo]
+
+        if (_pawnLastRowValidator(tile, yTo))
+        {
+            //_pawnPromotionState.value = tile
+        }
+        else
+        {
+            onPieceMoved()
+
+            saveToDatabase()
+        }
+
+        updateBoardState()
     }
 
     fun promotePawn(tile: Tile, newPiece: Piece)
@@ -317,11 +369,21 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
 
         // Is white King in check
         if (_boardKingScanner.isKingInCheck(_board, Player.White))
-            _kingInCheckState.value = Unit
+        {
+            viewModelScope.launch(Dispatchers.Main)
+            {
+                _kingInCheckState.value = Unit
+            }
+        }
 
         // Is black King in check
         else if (_boardKingScanner.isKingInCheck(_board, Player.Black))
-            _kingInCheckState.value = Unit
+        {
+            viewModelScope.launch(Dispatchers.Main)
+            {
+                _kingInCheckState.value = Unit
+            }
+        }
     }
 
     fun onBoardTileClicked(x: Int, y: Int)
@@ -380,7 +442,7 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
         updateBoardState()
     }
 
-    private fun clearDoublePawnMove(player: Player?)
+    fun clearDoublePawnMove(board: Board, player: Player?)
     {
         if (player == null)
             return
@@ -389,7 +451,7 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
         {
             for (y in 0 until getBoardHeight())
             {
-                val tile = _board.tiles[x][y]
+                val tile = board.tiles[x][y]
 
                 if (tile.piecePlayer != player)
                     continue
@@ -399,9 +461,17 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    fun updateBoardState(board: Board)
+    {
+        _boardState.value = board.copy()
+    }
+
     private fun updateBoardState()
     {
-        _boardState.value = _board
+        viewModelScope.launch(Dispatchers.Main)
+        {
+            _boardState.value = _board
+        }
     }
 
     private fun onPieceMoved()
@@ -415,7 +485,10 @@ class ChessBoardViewModel(application: Application) : AndroidViewModel(applicati
         _boardBlockableTileSelector.clear()
 
         // Swap game state
-        _gameState.value = GameState.Block
+        viewModelScope.launch(Dispatchers.Main)
+        {
+            _gameState.value = GameState.Block
+        }
 
         _boardBlockableTileShower(_board, getBlockablePlayer())
 

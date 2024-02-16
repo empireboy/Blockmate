@@ -8,6 +8,7 @@ import com.cm.blockmate.models.Tile
 import com.cm.blockmate.validators.EnPassantValidator
 import com.cm.blockmate.validators.KingCastleValidator
 import com.cm.blockmate.validators.KingInCheckAfterMoveValidator
+import com.cm.blockmate.validators.PawnEnPassantRowValidator
 import com.cm.blockmate.validators.PawnFirstMoveValidator
 
 class BoardTileSelector
@@ -25,7 +26,9 @@ class BoardTileSelector
         pawnFirstMoveValidator: PawnFirstMoveValidator,
         kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
         kingCastleValidator: KingCastleValidator,
-        enPassantValidator: EnPassantValidator
+        pawnEnPassantRowValidator: PawnEnPassantRowValidator,
+        enPassantValidator: EnPassantValidator,
+        updateThisBoard: Boolean = false
     )
     {
         val pressedTile = board.tiles[x][y]
@@ -67,7 +70,9 @@ class BoardTileSelector
             pawnFirstMoveValidator,
             kingInCheckAfterMoveValidator,
             kingCastleValidator,
-            enPassantValidator
+            pawnEnPassantRowValidator,
+            enPassantValidator,
+            updateThisBoard
         )
     }
 
@@ -81,7 +86,7 @@ class BoardTileSelector
         for (movableTile in _movableTiles)
         {
             if (movableTile.state != TileState.Movable)
-                return
+                continue
 
             movableTile.state = TileState.None
             movableTile.isCastleTargetLeft = false
@@ -107,7 +112,9 @@ class BoardTileSelector
         pawnFirstMoveValidator: PawnFirstMoveValidator,
         kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
         kingCastleValidator: KingCastleValidator,
-        enPassantValidator: EnPassantValidator
+        pawnEnPassantRowValidator: PawnEnPassantRowValidator,
+        enPassantValidator: EnPassantValidator,
+        updateThisBoard: Boolean = false
     )
     {
         val selectedTileTemp = _selectedTile ?: return
@@ -132,7 +139,9 @@ class BoardTileSelector
                 movableTile,
                 boardTileScanner,
                 boardPieceMover,
-                boardKingScanner
+                boardKingScanner,
+                false,
+                updateThisBoard
             ))
                 continue
 
@@ -153,7 +162,9 @@ class BoardTileSelector
                 capturableTile,
                 boardTileScanner,
                 boardPieceMover,
-                boardKingScanner
+                boardKingScanner,
+                false,
+                updateThisBoard
             ))
                 continue
 
@@ -175,7 +186,8 @@ class BoardTileSelector
             boardPieceMover,
             boardKingScanner,
             kingInCheckAfterMoveValidator,
-            kingCastleValidator
+            kingCastleValidator,
+            updateThisBoard
         )
 
         updateMovableEnPassantTiles(
@@ -185,7 +197,9 @@ class BoardTileSelector
             boardPieceMover,
             boardKingScanner,
             kingInCheckAfterMoveValidator,
-            enPassantValidator
+            pawnEnPassantRowValidator,
+            enPassantValidator,
+            updateThisBoard
         )
     }
 
@@ -196,7 +210,8 @@ class BoardTileSelector
         boardPieceMover: BoardPieceMover,
         boardKingScanner: BoardKingScanner,
         kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
-        kingCastleValidator: KingCastleValidator
+        kingCastleValidator: KingCastleValidator,
+        updateThisBoard: Boolean = false
     )
     {
         if (selectedTile.piece != Piece.King)
@@ -212,7 +227,8 @@ class BoardTileSelector
                 boardTileScanner,
                 boardPieceMover,
                 boardKingScanner,
-                kingInCheckAfterMoveValidator
+                kingInCheckAfterMoveValidator,
+                updateThisBoard
             ))
             {
                 val movableCastleTile: Tile? = boardKingScanner.getCastleTile(board, Player.White, true)
@@ -234,7 +250,8 @@ class BoardTileSelector
                 boardTileScanner,
                 boardPieceMover,
                 boardKingScanner,
-                kingInCheckAfterMoveValidator
+                kingInCheckAfterMoveValidator,
+                updateThisBoard
             ))
             {
                 val movableCastleTile: Tile? = boardKingScanner.getCastleTile(board, Player.White, false)
@@ -259,7 +276,8 @@ class BoardTileSelector
                 boardTileScanner,
                 boardPieceMover,
                 boardKingScanner,
-                kingInCheckAfterMoveValidator
+                kingInCheckAfterMoveValidator,
+                updateThisBoard
             ))
             {
                 val movableCastleTile: Tile? = boardKingScanner.getCastleTile(board, Player.Black, true)
@@ -281,7 +299,8 @@ class BoardTileSelector
                 boardTileScanner,
                 boardPieceMover,
                 boardKingScanner,
-                kingInCheckAfterMoveValidator
+                kingInCheckAfterMoveValidator,
+                updateThisBoard
             ))
             {
                 val movableCastleTile: Tile? = boardKingScanner.getCastleTile(board, Player.Black, false)
@@ -304,10 +323,12 @@ class BoardTileSelector
         boardPieceMover: BoardPieceMover,
         boardKingScanner: BoardKingScanner,
         kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
-        enPassantValidator: EnPassantValidator
+        pawnEnPassantRowValidator: PawnEnPassantRowValidator,
+        enPassantValidator: EnPassantValidator,
+        updateThisBoard: Boolean = false
     )
     {
-        if (selectedTile.piece != Piece.Pawn)
+        if (!pawnEnPassantRowValidator(selectedTile))
             return
 
         var enPassantTile: Tile?
@@ -325,7 +346,8 @@ class BoardTileSelector
                     boardTileScanner,
                     boardPieceMover,
                     boardKingScanner,
-                    kingInCheckAfterMoveValidator
+                    kingInCheckAfterMoveValidator,
+                    updateThisBoard
                 ))
                 {
                     enPassantTile.state = TileState.Movable
@@ -346,7 +368,8 @@ class BoardTileSelector
                     boardTileScanner,
                     boardPieceMover,
                     boardKingScanner,
-                    kingInCheckAfterMoveValidator
+                    kingInCheckAfterMoveValidator,
+                    updateThisBoard
                 ))
                 {
                     enPassantTile.state = TileState.Movable
@@ -363,14 +386,15 @@ class BoardTileSelector
             if (enPassantTile != null)
             {
                 if (enPassantValidator(
-                        board,
-                        selectedTile,
-                        enPassantTile,
-                        boardTileScanner,
-                        boardPieceMover,
-                        boardKingScanner,
-                        kingInCheckAfterMoveValidator
-                    ))
+                    board,
+                    selectedTile,
+                    enPassantTile,
+                    boardTileScanner,
+                    boardPieceMover,
+                    boardKingScanner,
+                    kingInCheckAfterMoveValidator,
+                    updateThisBoard
+                ))
                 {
                     enPassantTile.state = TileState.Movable
                     enPassantTile.isEnPassantTarget = true
@@ -384,14 +408,15 @@ class BoardTileSelector
             if (enPassantTile != null)
             {
                 if (enPassantValidator(
-                        board,
-                        selectedTile,
-                        enPassantTile,
-                        boardTileScanner,
-                        boardPieceMover,
-                        boardKingScanner,
-                        kingInCheckAfterMoveValidator
-                    ))
+                    board,
+                    selectedTile,
+                    enPassantTile,
+                    boardTileScanner,
+                    boardPieceMover,
+                    boardKingScanner,
+                    kingInCheckAfterMoveValidator,
+                    updateThisBoard
+                ))
                 {
                     enPassantTile.state = TileState.Movable
                     enPassantTile.isEnPassantTarget = true
@@ -404,8 +429,6 @@ class BoardTileSelector
 
     private fun getEnPassantTile(board: Board, pawnTile: Tile, left: Boolean): Tile?
     {
-        val (pawnTileX, pawnTileY) = board.getCoordinatesOfTile(pawnTile) ?: throw AssertionError()
-
         var enPassantTileX: Int
         var enPassantTileY: Int
 
@@ -415,26 +438,26 @@ class BoardTileSelector
         {
             if (player == Player.White)
             {
-                enPassantTileX = pawnTileX - 1
-                enPassantTileY = pawnTileY - 1
+                enPassantTileX = pawnTile.x - 1
+                enPassantTileY = pawnTile.y - 1
             }
             else
             {
-                enPassantTileX = pawnTileX - 1
-                enPassantTileY = pawnTileY + 1
+                enPassantTileX = pawnTile.x - 1
+                enPassantTileY = pawnTile.y + 1
             }
         }
         else
         {
             if (player == Player.White)
             {
-                enPassantTileX = pawnTileX + 1
-                enPassantTileY = pawnTileY - 1
+                enPassantTileX = pawnTile.x + 1
+                enPassantTileY = pawnTile.y - 1
             }
             else
             {
-                enPassantTileX = pawnTileX + 1
-                enPassantTileY = pawnTileY + 1
+                enPassantTileX = pawnTile.x + 1
+                enPassantTileY = pawnTile.y + 1
             }
         }
 

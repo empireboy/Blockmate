@@ -1,5 +1,6 @@
 package com.cm.blockmate.validators
 
+import com.cm.blockmate.enums.Piece
 import com.cm.blockmate.enums.Player
 import com.cm.blockmate.models.Board
 import com.cm.blockmate.models.Tile
@@ -16,33 +17,36 @@ class EnPassantValidator
         boardTileScanner: BoardTileScanner,
         boardPieceMover: BoardPieceMover,
         boardKingScanner: BoardKingScanner,
-        kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator
+        kingInCheckAfterMoveValidator: KingInCheckAfterMoveValidator,
+        updateThisBoard: Boolean = false
     ): Boolean
     {
+        return false
+
         if (enPassantTile.piecePlayer == pawnTile.piecePlayer)
             return false
-
-        val (enPassantTileX, enPassantTileY) = board.getCoordinatesOfTile(enPassantTile) ?: throw AssertionError()
-        val (pawnTileX, pawnTileY) = board.getCoordinatesOfTile(pawnTile) ?: throw AssertionError()
 
         val opponentPawnX: Int
         val opponentPawnY: Int
 
         if (pawnTile.piecePlayer == Player.White)
         {
-            opponentPawnX = enPassantTileX
-            opponentPawnY = enPassantTileY + 1
+            opponentPawnX = enPassantTile.x
+            opponentPawnY = enPassantTile.y + 1
         }
         else
         {
-            opponentPawnX = enPassantTileX
-            opponentPawnY = enPassantTileY - 1
+            opponentPawnX = enPassantTile.x
+            opponentPawnY = enPassantTile.y - 1
         }
 
         if (!board.isInRange(opponentPawnX, opponentPawnY))
             return false
 
         val opponentPawnTile = board.tiles[opponentPawnX][opponentPawnY]
+
+        if (opponentPawnTile.piece != Piece.Pawn)
+            return false
 
         if (!opponentPawnTile.hasPawnMovedTwice)
             return false
@@ -52,13 +56,14 @@ class EnPassantValidator
 
         if (!kingInCheckAfterMoveValidator(
             board,
-            pawnTileX,
-            pawnTileY,
+            pawnTile.x,
+            pawnTile.y,
             enPassantTile,
             boardTileScanner,
             boardPieceMover,
             boardKingScanner,
-            true
+            true,
+            updateThisBoard
         ))
             return false
 

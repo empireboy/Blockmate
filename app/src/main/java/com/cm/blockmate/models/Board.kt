@@ -1,6 +1,5 @@
 package com.cm.blockmate.models
 
-import android.util.Log
 import com.cm.blockmate.common.Int2
 import com.cm.blockmate.enums.Piece
 
@@ -78,23 +77,6 @@ data class Board(
             y >= 0 &&
             y <= getHeight() - 1
         )
-    }
-
-    fun getCoordinatesOfTile(tile: Tile): Pair<Int, Int>?
-    {
-        for (x in 0 until getWidth())
-        {
-            for (y in 0 until getHeight())
-            {
-                //Log.d("Test", tiles[x][y].id.toString() + " at x and y: $x $y")
-                if (tiles[x][y].id == tile.id)
-                {
-                    return Pair(x, y)
-                }
-            }
-        }
-
-        return null
     }
 
     fun copy(): Board
