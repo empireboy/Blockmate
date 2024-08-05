@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace 'com.cm.blockmate'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.cm.blockmate"
         minSdk 23
-        targetSdk 33
+        targetSdk 34
         versionCode 2
         versionName "1.0.1"
 
